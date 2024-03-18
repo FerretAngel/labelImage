@@ -40,14 +40,105 @@ let fileIo: FileIo | null = null,
   canvasCtx: CanvasRenderingContext2D | null = null;
 function getDefalutLables() {
   return [
-    { id: 0, name: "car", color: "#ff0000" },
-    { id: 1, name: "truck", color: "#00ff00" },
-    { id: 2, name: "fish", color: "#0000ff" },
+    { id: 0, name: "person", color: "#a3103f" },
+    { id: 1, name: "bicycle", color: "#692079" },
+    { id: 2, name: "car", color: "#e7b81" },
+    { id: 3, name: "motorcycle", color: "#f89892" },
+    { id: 4, name: "airplane", color: "#15aa3f" },
+    { id: 5, name: "bus", color: "#a43389" },
+    { id: 6, name: "train", color: "#89ca75" },
+    { id: 7, name: "truck", color: "#4bce20" },
+    { id: 8, name: "boat", color: "#40d49" },
+    { id: 9, name: "traffic light", color: "#f47c7a" },
+    { id: 10, name: "fire hydrant", color: "#1979b1" },
+    { id: 11, name: "stop sign", color: "#a09f4b" },
+    { id: 12, name: "parking meter", color: "#381366" },
+    { id: 13, name: "bench", color: "#85c89" },
+    { id: 14, name: "bird", color: "#6530ce" },
+    { id: 15, name: "cat", color: "#bebff6" },
+    { id: 16, name: "dog", color: "#6faf2c" },
+    { id: 17, name: "horse", color: "#24557f" },
+    { id: 18, name: "sheep", color: "#cf70f0" },
+    { id: 19, name: "cow", color: "#e99d7d" },
+    { id: 20, name: "elephant", color: "#636c60" },
+    { id: 21, name: "bear", color: "#73c095" },
+    { id: 22, name: "zebra", color: "#c07210" },
+    { id: 23, name: "giraffe", color: "#6666d3" },
+    { id: 24, name: "backpack", color: "#69786f" },
+    { id: 25, name: "umbrella", color: "#6383ee" },
+    { id: 26, name: "handbag", color: "#51159a" },
+    { id: 27, name: "tie", color: "#c5a699" },
+    { id: 28, name: "suitcase", color: "#9984fb" },
+    { id: 29, name: "frisbee", color: "#ef1fa4" },
+    { id: 30, name: "skis", color: "#ae918f" },
+    { id: 31, name: "snowboard", color: "#71a4f5" },
+    { id: 32, name: "sports ball", color: "#b6514c" },
+    { id: 33, name: "kite", color: "#6be60e" },
+    { id: 34, name: "baseball bat", color: "#a126f2" },
+    { id: 35, name: "baseball glove", color: "#7659f5" },
+    { id: 36, name: "skateboard", color: "#c69da7" },
+    { id: 37, name: "surfboard", color: "#54e55b" },
+    { id: 38, name: "tennis racket", color: "#739f3b" },
+    { id: 39, name: "bottle", color: "#e405e0" },
+    { id: 40, name: "wine glass", color: "#e130ee" },
+    { id: 41, name: "cup", color: "#3c28b6" },
+    { id: 42, name: "fork", color: "#ebe953" },
+    { id: 43, name: "knife", color: "#23539" },
+    { id: 44, name: "spoon", color: "#6ef2e6" },
+    { id: 45, name: "bowl", color: "#5d5c4c" },
+    { id: 46, name: "banana", color: "#43bfca" },
+    { id: 47, name: "apple", color: "#7fef14" },
+    { id: 48, name: "sandwich", color: "#781102" },
+    { id: 49, name: "orange", color: "#56bb40" },
+    { id: 50, name: "broccoli", color: "#a73b0" },
+    { id: 51, name: "carrot", color: "#b2fffb" },
+    { id: 52, name: "hot dog", color: "#2e8316" },
+    { id: 53, name: "pizza", color: "#fd2993" },
+    { id: 54, name: "donut", color: "#668aaf" },
+    { id: 55, name: "cake", color: "#f7e147" },
+    { id: 56, name: "chair", color: "#37af33" },
+    { id: 57, name: "couch", color: "#b18370" },
+    { id: 58, name: "potted plant", color: "#d9cafb" },
+    { id: 59, name: "bed", color: "#e018e2" },
+    { id: 60, name: "dining table", color: "#c007a7" },
+    { id: 61, name: "toilet", color: "#4cf7a8" },
+    { id: 62, name: "tv", color: "#c9fbf3" },
+    { id: 63, name: "laptop", color: "#af94d7" },
+    { id: 64, name: "mouse", color: "#d7e70e" },
+    { id: 65, name: "remote", color: "#5f8711" },
+    { id: 66, name: "keyboard", color: "#a55acf" },
+    { id: 67, name: "cell phone", color: "#68d41" },
+    { id: 68, name: "microwave", color: "#771f8d" },
+    { id: 69, name: "oven", color: "#fd8cd6" },
+    { id: 70, name: "toaster", color: "#ceea59" },
+    { id: 71, name: "sink", color: "#fd3dfc" },
+    { id: 72, name: "refrigerator", color: "#f1631c" },
+    { id: 73, name: "book", color: "#eb624c" },
+    { id: 74, name: "clock", color: "#120a7f" },
+    { id: 75, name: "vase", color: "#cb528b" },
+    { id: 76, name: "scissors", color: "#f66eb" },
+    { id: 77, name: "teddy bear", color: "#8a405a" },
+    { id: 78, name: "hair drier", color: "#c639cb" },
+    { id: 79, name: "toothbrush", color: "#5af16b" },
   ];
 }
 function lableAction(labels = getDefalutLables(), index = 0) {
   const lableList = ref(labels);
   const currentIndex = ref(index);
+  function save() {
+    localStorage.setItem("lableList", JSON.stringify(lableList.value));
+    localStorage.setItem("currentIndex", JSON.stringify(currentIndex.value));
+  }
+  function read() {
+    const lableListStr = localStorage.getItem("lableList");
+    const currentIndexStr = localStorage.getItem("currentIndex");
+    if (lableListStr) {
+      lableList.value = JSON.parse(lableListStr);
+    }
+    if (currentIndexStr) {
+      currentIndex.value = JSON.parse(currentIndexStr);
+    }
+  }
   function nextLabel() {
     currentIndex.value = (currentIndex.value + 1) % lableList.value.length;
     return lableList.value[currentIndex.value];
@@ -70,21 +161,25 @@ function lableAction(labels = getDefalutLables(), index = 0) {
   function addLabel(name: string, color = getRadomColor()) {
     const id = lableList.value.length;
     lableList.value.push({ id, name, color });
+    save();
   }
   function delLabel(id: number) {
     const index = lableList.value.findIndex((item) => item.id === id);
     if (index === -1) return;
     lableList.value.splice(index, 1);
+    save();
   }
   function updateLabel(id: number, name: string, color: string) {
     const index = lableList.value.findIndex((item) => item.id === id);
     if (index === -1) return;
     lableList.value[index].name = name;
     lableList.value[index].color = color;
+    save();
   }
   function setLable(id: number) {
     currentIndex.value = lableList.value.findIndex((item) => item.id === id);
   }
+  read();
   return {
     lables: lableList,
     lableIndex: currentIndex,

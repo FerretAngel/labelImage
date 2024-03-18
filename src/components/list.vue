@@ -77,6 +77,7 @@ const list = computed(() => {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    overflow: scroll;
   }
 }
 </style>
