@@ -15,6 +15,7 @@ export default defineConfig({
       resolvers: [VarletImportResolver({ autoImport: true })],
     }),
   ],
+  base: "./",
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
