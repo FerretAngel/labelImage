@@ -10,14 +10,9 @@ declare module 'vue' {
     LableImage: typeof import('./src/components/lableImage.vue')['default']
     List: typeof import('./src/components/list.vue')['default']
     VarButton: typeof import('@varlet/ui')['_ButtonComponent']
-    VarCell: typeof import('@varlet/ui')['_CellComponent']
     VarDialog: typeof import('@varlet/ui')['_DialogComponent']
     VarDivider: typeof import('@varlet/ui')['_DividerComponent']
-    VarImage: typeof import('@varlet/ui')['_ImageComponent']
     VarInput: typeof import('@varlet/ui')['_InputComponent']
     VarPaper: typeof import('@varlet/ui')['_PaperComponent']
-  }
-  export interface ComponentCustomProperties {
-    vLazy: typeof import('@varlet/ui')['_LazyComponent']
   }
 }

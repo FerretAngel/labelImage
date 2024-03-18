@@ -212,6 +212,7 @@ async function loadLable(imageName: string) {
 async function loadImageAction(isNext: boolean | ImageData = true) {
   try {
     await saveLable();
+    lableList.value = [];
     if (!fileIo) return;
     const imageData =
       typeof isNext === "boolean"
@@ -225,7 +226,6 @@ async function loadImageAction(isNext: boolean | ImageData = true) {
         (item) => item.name === imageData.name
       );
     states.imageIndex = fileIo.index;
-    lableList.value = [];
     await loadImage(imageData);
     await loadLable(imageData.name);
     refreshDraw();
@@ -430,7 +430,9 @@ async function init() {
 }
 function loadEvents() {
   // 监听ctrl+z
+  let timmer: number | undefined;
   window.addEventListener("keydown", (e) => {
+    if (timmer && Date.now() - timmer < 200) return;
     if (e.key === "d" || e.key === "D") {
       loadImageAction();
     } else if (e.key === "a" || e.key === "A") {
@@ -447,6 +449,7 @@ function loadEvents() {
       lableList.value.pop();
       refreshDraw();
     }
+    timmer = Date.now();
   });
   if (!canvasDom.value) return;
   const canvas = canvasDom.value;
@@ -551,22 +554,22 @@ function lableContextmenuAction(isDelete = false) {
       <var-button
         type="primary"
         @click="loadImageAction()"
-        >下一张</var-button
+        >下一张(D)</var-button
       >
       <var-button
         type="primary"
         @click="loadImageAction(false)"
-        >上一张</var-button
+        >上一张(A)</var-button
       >
       <var-button
         type="primary"
         @click="prevLabel()"
-        >上一个标签</var-button
+        >上一个标签(Q)</var-button
       >
       <var-button
         type="primary"
         @click="nextLabel()"
-        >下一个标签</var-button
+        >下一个标签(E)</var-button
       >
     </header>
     <main>
