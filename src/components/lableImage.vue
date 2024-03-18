@@ -33,11 +33,11 @@ const states = reactive({
     dw: 0,
     dh: 0,
   },
-});// 状态
-const lableList = ref(new Array<LabelData>());// 当前图片的标签数据
-const imageList = ref(new Array<ImageData>());// 图片列表
-let fileIo: FileIo | null = null,// 文件操作实例
-  canvasCtx: CanvasRenderingContext2D | null = null;// 画布上下文
+}); // 状态
+const lableList = ref(new Array<LabelData>()); // 当前图片的标签数据
+const imageList = ref(new Array<ImageData>()); // 图片列表
+let fileIo: FileIo | null = null, // 文件操作实例
+  canvasCtx: CanvasRenderingContext2D | null = null; // 画布上下文
 /**
  * 默认标签
  */
@@ -201,16 +201,16 @@ function lableAction(labels = getDefalutLables(), index = 0) {
   };
 }
 const {
-  lables,
-  setLable,
-  addLabel,
-  delLabel,
-  updateLabel,
-  getRadomColor,
-  currentLable,
-  nextLabel,
-  prevLabel,
-  getLabelById,
+  lables, // 标签数据
+  setLable, // 设置当前标签
+  addLabel, // 添加标签
+  delLabel, // 删除标签
+  updateLabel, // 修改标签
+  getRadomColor, // 获取随机颜色
+  currentLable, // 获取当前标签
+  nextLabel, // 下一个标签
+  prevLabel, // 上一个标签
+  getLabelById, // 通过id获取标签
 } = lableAction();
 
 /**
@@ -253,7 +253,7 @@ function loadImage(imageData: ImageData) {
       cavans.style.height = img.height + "px";
       // 设置标题
       document.title = imageData.name;
-      resetCanvasPosition();
+      resetCanvasPosition();// 重置canvas位置，保持居中
       resolve(img);
     };
     img.onerror = (e) => {
@@ -578,7 +578,7 @@ function loadEvents() {
   // 监听鼠标滚轮
   canvas.parentNode?.addEventListener(
     "wheel",
-    (e) => {
+    (e: any) => {
       if (!canvasCtx) return;
       const scale = Number(canvas.style.getPropertyValue("--scale")) || 1;
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
@@ -596,7 +596,7 @@ function loadEvents() {
   });
 }
 onMounted(async () => {
-  // @ts-ignore
+  // @ts-ignore  ts没有showDirectoryPicker，所以忽略
   if (!window.showDirectoryPicker) {
     alert("当前浏览器不支持showDirectoryPicker, 请使用最新版edge/chrome浏览器");
     return;
@@ -768,7 +768,7 @@ function lableContextmenuAction(isDelete = false) {
               type="primary"
               size="small"
               @click="setLable(data.id as number)"
-              @contextmenu="lableContextmenu($event, data)"
+              @contextmenu="lableContextmenu($event, data as any)"
             >
               {{ data.name }}
               <div
@@ -817,6 +817,7 @@ function lableContextmenuAction(isDelete = false) {
         size="small"
       >
         <template #append-icon>
+          <!-- @vue-ignore,这里需要输入color，但是这个ui组件没适配。不影响使用。。。 -->
           <var-input
             style="width: 2em"
             v-model="inputLabel.color"
