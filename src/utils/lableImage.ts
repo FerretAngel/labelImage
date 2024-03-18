@@ -1,6 +1,7 @@
 export interface ImageData {
   name: string;
   value: FileSystemFileHandle;
+  url: string;
 }
 export interface LabelData {
   id: string; // 唯一id
@@ -25,14 +26,16 @@ export class FileIo {
     let { ImageDirHandle, OutputDirHandle } = param;
     this.ImageDirHandle = ImageDirHandle;
     this.OutputDirHandle = OutputDirHandle;
-    this.initImages();
   }
   async initImages() {
     const { ImageDirHandle, imagesData } = this;
     //@ts-ignore
     for await (const [key, value] of ImageDirHandle.entries()) {
-      imagesData.push({ name: key, value });
+      const file = await value.getFile();
+      const url = URL.createObjectURL(file);
+      imagesData.push({ name: key, value, url });
     }
+    console.log("imagesData", imagesData);
   }
 
   setIndex(index: number) {
@@ -95,67 +98,67 @@ export class FileIo {
     return this.imagesData[this.index];
   }
 }
-interface Label {
+export interface Label {
   id: number;
   name: string;
   color: string;
 }
-export class Lable {
-  labels: Array<Label>;
-  index: number;
-  constructor(labels = getDefalutLables(), index = 0) {
-    this.labels = labels;
-    this.index = index;
-  }
-  setIndex(index: number) {
-    if (index < 0 || index >= this.labels.length)
-      throw new Error("index out of range");
-    this.index = index;
-  }
+// export class Lable {
+//   labels: Array<Label>;
+//   index: number;
+//   constructor(labels = getDefalutLables(), index = 0) {
+//     this.labels = labels;
+//     this.index = index;
+//   }
+//   setIndex(index: number) {
+//     if (index < 0 || index >= this.labels.length)
+//       throw new Error("index out of range");
+//     this.index = index;
+//   }
 
-  getLabelById(id: number) {
-    return this.labels.find((label) => label.id === id);
-  }
-  get radomColor() {
-    return "#" + Math.floor(Math.random() * 16777215).toString(16);
-  }
-  addLabel(name: string, _color?: string) {
-    const color = _color || this.radomColor;
-    const id = this.labels.length;
-    this.labels.push({ id, name, color });
-  }
-  delLabel(id: number) {
-    this.labels = this.labels.filter((label) => label.id !== id);
-  }
+//   getLabelById(id: number) {
+//     return this.labels.find((label) => label.id === id);
+//   }
+//   get radomColor() {
+//     return "#" + Math.floor(Math.random() * 16777215).toString(16);
+//   }
+//   addLabel(name: string, _color?: string) {
+//     const color = _color || this.radomColor;
+//     const id = this.labels.length;
+//     this.labels.push({ id, name, color });
+//   }
+//   delLabel(id: number) {
+//     this.labels = this.labels.filter((label) => label.id !== id);
+//   }
 
-  get nextLabel() {
-    const { labels, index } = this;
-    const _index = index + 1;
-    if (_index >= labels.length) {
-      return labels[0];
-    }
-    this.index = _index;
-    return labels[_index];
-  }
+//   get nextLabel() {
+//     const { labels, index } = this;
+//     const _index = index + 1;
+//     if (_index >= labels.length) {
+//       return labels[0];
+//     }
+//     this.index = _index;
+//     return labels[_index];
+//   }
 
-  get prevLabel() {
-    const { labels, index } = this;
-    const _index = index - 1;
-    if (_index < 0) {
-      return labels[labels.length - 1];
-    }
-    this.index = _index;
-    return labels[_index];
-  }
+//   get prevLabel() {
+//     const { labels, index } = this;
+//     const _index = index - 1;
+//     if (_index < 0) {
+//       return labels[labels.length - 1];
+//     }
+//     this.index = _index;
+//     return labels[_index];
+//   }
 
-  get currentLabel() {
-    return this.labels[this.index];
-  }
-}
-function getDefalutLables() {
-  return [
-    { id: 0, name: "car", color: "#ff0000" },
-    { id: 1, name: "truck", color: "#00ff00" },
-    { id: 2, name: "fish", color: "#0000ff" },
-  ];
-}
+//   get currentLabel() {
+//     return this.labels[this.index];
+//   }
+// }
+// function getDefalutLables() {
+//   return [
+//     { id: 0, name: "car", color: "#ff0000" },
+//     { id: 1, name: "truck", color: "#00ff00" },
+//     { id: 2, name: "fish", color: "#0000ff" },
+//   ];
+// }

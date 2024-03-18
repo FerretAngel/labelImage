@@ -4,7 +4,7 @@ import lableImage from "./components/lableImage.vue";
 </script>
 
 <template>
-  <lableImage></lableImage>
+  <lableImage ></lableImage>
 </template>
 
 <style scoped></style>
