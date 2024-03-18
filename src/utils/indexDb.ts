@@ -1,5 +1,9 @@
 const INDEX_DB_NAME = "LABEL_IMAGE_INDEXDB";
 const OBJECT_STORE_NAME = "LABEL_IMAGE_OBJECT_STORE";
+/**
+ * 打开indexDB
+ * @returns IDBDatabase
+ */
 function open() {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const db = indexedDB.open(INDEX_DB_NAME, 3);
@@ -20,6 +24,11 @@ function open() {
   });
 }
 
+/**
+ * 获取缓存数据
+ * @param key 
+ * @returns Promise<T | undefined>
+ */
 export async function getData<T>(key: string) {
   return new Promise<T | undefined>(async (resolve, reject) => {
     const db = await open();
@@ -37,7 +46,12 @@ export async function getData<T>(key: string) {
     };
   });
 }
-
+/**
+ * 缓存数据
+ * @param key 
+ * @param value 
+ * @returns void
+ */
 export async function setData(key: string, value: any) {
   return new Promise<void>(async (resolve, reject) => {
     const db = await open();

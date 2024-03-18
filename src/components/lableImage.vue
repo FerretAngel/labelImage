@@ -33,11 +33,14 @@ const states = reactive({
     dw: 0,
     dh: 0,
   },
-});
-const lableList = ref(new Array<LabelData>());
-const imageList = ref(new Array<ImageData>());
-let fileIo: FileIo | null = null,
-  canvasCtx: CanvasRenderingContext2D | null = null;
+});// 状态
+const lableList = ref(new Array<LabelData>());// 当前图片的标签数据
+const imageList = ref(new Array<ImageData>());// 图片列表
+let fileIo: FileIo | null = null,// 文件操作实例
+  canvasCtx: CanvasRenderingContext2D | null = null;// 画布上下文
+/**
+ * 默认标签
+ */
 function getDefalutLables() {
   return [
     { id: 0, name: "person", color: "#a3103f" },
@@ -122,6 +125,9 @@ function getDefalutLables() {
     { id: 79, name: "toothbrush", color: "#5af16b" },
   ];
 }
+/**
+ * 标签操作相关，初始化，增删改查
+ */
 function lableAction(labels = getDefalutLables(), index = 0) {
   const lableList = ref(labels);
   const currentIndex = ref(index);
@@ -207,6 +213,9 @@ const {
   getLabelById,
 } = lableAction();
 
+/**
+ * 重置canvas位置,保持居中
+ */
 function resetCanvasPosition() {
   if (!canvasDom.value) return;
   // 把canvas居中缩放到父元素
@@ -220,7 +229,10 @@ function resetCanvasPosition() {
   // 考虑transformOrigin为居中
   canvas.style.setProperty("--scale", `${scale}`);
 }
-
+/**
+ * 解析图片，加载到canvas中
+ * @param imageData
+ */
 function loadImage(imageData: ImageData) {
   return new Promise<HTMLImageElement>(async (resolve, reject) => {
     const img = new Image();
@@ -250,6 +262,9 @@ function loadImage(imageData: ImageData) {
     };
   });
 }
+/**
+ * 保存标签数据
+ */
 async function saveLable() {
   if (!fileIo) throw new Error("fileIo is null");
   if (lableList.value.length === 0) return;
@@ -268,7 +283,10 @@ async function saveLable() {
   const name = imgName.split(".")[0] + ".txt";
   await fileIo.saveFile(name, content);
 }
-
+/**
+ * 根据yolo格式加载标签数据
+ * @param imageName
+ */
 async function loadLable(imageName: string) {
   if (!fileIo) throw new Error("fileIo is null");
   const name = imageName.split(".")[0] + ".txt";
@@ -303,7 +321,10 @@ async function loadLable(imageName: string) {
     });
   });
 }
-
+/**
+ * 加载图片具体操作
+ * @param isNext 是否加载下一张
+ */
 async function loadImageAction(isNext: boolean | ImageData = true) {
   try {
     await saveLable();
@@ -329,7 +350,9 @@ async function loadImageAction(isNext: boolean | ImageData = true) {
     Snackbar.error("加载图片失败:" + e.message);
   }
 }
-
+/**
+ * canvas操作部分
+ */
 function drawAction() {
   let isDraw = false;
   let isDrag = false;
@@ -482,6 +505,7 @@ function drawAction() {
   return { start, move, end, refreshDraw };
 }
 const { start, move, refreshDraw } = drawAction();
+// 初始化部分
 async function init() {
   const ImageDirHandle = await getData<FileSystemDirectoryHandle>(
     "ImageDirHandle"
@@ -523,6 +547,9 @@ async function init() {
   refreshDraw();
   Snackbar.clear();
 }
+/**
+ * 注册事件
+ */
 function loadEvents() {
   // 监听ctrl+z
   let timmer: number | undefined;
@@ -578,12 +605,15 @@ onMounted(async () => {
   loadEvents();
 });
 
-// 添加标签
+// 添加标签部分
 const inputLabel = reactive({
   id: undefined as number | undefined,
   name: "",
   color: getRadomColor(),
 });
+/**
+ * 确认添加标签
+ */
 function confirmAddLable() {
   const { id, name, color } = inputLabel;
   if (id) {
@@ -598,13 +628,18 @@ function confirmAddLable() {
   states.isShowAddLable = false;
 }
 
-// 右键菜单
+// 标签的右键菜单部分
 const lableContextmenuState = reactive({
   x: 0,
   y: 0,
   show: false,
   data: null as Label | null,
 });
+/**
+ * 右键菜单事件
+ * @param e
+ * @param data
+ */
 function lableContextmenu(e: MouseEvent, data: Label) {
   e.preventDefault();
   lableContextmenuState.x = e.clientX;
@@ -619,6 +654,10 @@ function lableContextmenu(e: MouseEvent, data: Label) {
     { once: true }
   );
 }
+/**
+ * 右键菜单操作
+ * @param isDelete 是否删除
+ */
 function lableContextmenuAction(isDelete = false) {
   if (!lableContextmenuState.data) return;
   const { name, id, color } = lableContextmenuState.data;
@@ -640,6 +679,7 @@ function lableContextmenuAction(isDelete = false) {
 
 <template>
   <div class="lableImageBody">
+    <!-- 头部操作栏 -->
     <header>
       <var-button
         type="primary"
@@ -667,7 +707,9 @@ function lableContextmenuAction(isDelete = false) {
         >下一个标签(E)</var-button
       >
     </header>
+    <!-- 内容主体 -->
     <main>
+      <!-- 图片列表 -->
       <div class="left">
         <var-divider description="文件" />
         <template
@@ -694,6 +736,7 @@ function lableContextmenuAction(isDelete = false) {
           </var-button>
         </template>
       </div>
+      <!-- 画布 -->
       <div class="main">
         <canvas
           ref="canvasDom"
@@ -704,6 +747,7 @@ function lableContextmenuAction(isDelete = false) {
         >
         </canvas>
       </div>
+      <!-- 标签列表 -->
       <div class="right">
         <var-divider description="标签" />
         <var-button
@@ -742,6 +786,7 @@ function lableContextmenuAction(isDelete = false) {
         </ListVue>
       </div>
     </main>
+    <!-- 弹窗部分 -->
     <!-- 选择文件夹 -->
     <var-dialog
       v-model:show="states.isShowChooseFolder"
