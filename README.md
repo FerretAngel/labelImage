@@ -2,7 +2,7 @@
 一个适用于 yolov8 数据集的**网页**端标注工具。<br>
 打开即用、无需上传图片就是它的优点！<br>
 基于vue3+ts，不依赖后端和任何服务器(在线图标使用了iconify除外)。<br>
-![](http://note.ferret.icu/file/WEBP_79BBDC92F33.webp)<br>
+![](https://ferret.icu/api/file/WEBP_79BBDC92F33.webp)<br>
 # 使用方法
 `A` => `切换上一张图片`<br>
 `D` => `切换下一张图片`<br>
