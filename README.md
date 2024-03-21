@@ -31,7 +31,6 @@ ps.以上顺序不分先后。
 ## 项目使用  
 ```sh
 https://github.com/FerretAngel/labelImageWeb.git
-npm run dev
 ```
 ```sh
 npm i
