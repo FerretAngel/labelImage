@@ -718,6 +718,7 @@ function lableContextmenuAction(isDelete = false) {
     .right {
       width: 10em;
       height: 100%;
+      overflow-y: auto;
     }
     .main {
       flex: 1;
