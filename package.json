@@ -14,7 +14,8 @@
     "@varlet/ui": "^3.1.2",
     "less": "^4.2.0",
     "less-loader": "^12.2.0",
-    "vue": "^3.4.21"
+    "vue": "^3.4.21",
+    "vue3-colorpicker": "^2.3.0"
   },
   "devDependencies": {
     "@iconify/vue": "^4.1.1",

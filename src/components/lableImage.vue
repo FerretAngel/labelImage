@@ -1,23 +1,22 @@
 <script lang="ts" setup>
-import { onMounted, reactive, ref, type Ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import { Snackbar } from "@varlet/ui";
-import { getData } from "@/utils/indexDb";
+import { ColorPicker } from "vue3-colorpicker";
+import "vue3-colorpicker/style.css";
 import {
+  getData,
   selectImageFolder,
-  getLables,
-  cacheLable,
   selectOutputFolder,
-  getRadomId,
-  transfromYolo,
-  transfromYoloReverse,
-  type StatesType,
-  DrawAction,
-} from "@/utils";
+} from "@/utils/indexDb";
 import {
-  FileIo,
   type Label,
   type ImageData,
   type LabelData,
+  type StatesType,
+  getRadomColor,
+  FileIo,
+  LabelManage,
+  DrawAction,
 } from "@/utils/lableImage";
 import ListVue from "@/components/list.vue";
 const canvasDom = ref<HTMLCanvasElement | null>(null);
@@ -51,107 +50,9 @@ const states = reactive<StatesType>({
 }); // 状态
 const lableList = reactive(new Array<LabelData>()); // 当前图片的标签数据
 const imageList = ref(new Array<ImageData>()); // 图片列表
+const labelManage = new LabelManage(states); // 标签管理
 let fileIo: FileIo | null = null, // 文件操作实例
-  canvasCtx: CanvasRenderingContext2D | null = null,
   drawAction: DrawAction | null; // 画布上下文
-/**
- * 标签操作相关，初始化，增删改查
- */
-function lableAction(labels = getLables(), index = 0) {
-  const lableList = ref(labels);
-  const currentIndex = ref(index);
-  function updateCurrentLabel() {
-    states.currentLable = lableList.value[currentIndex.value];
-  }
-  function save() {
-    localStorage.setItem("lableList", JSON.stringify(lableList.value));
-    localStorage.setItem("currentIndex", JSON.stringify(currentIndex.value));
-  }
-  function read() {
-    const lableListStr = localStorage.getItem("lableList");
-    const currentIndexStr = localStorage.getItem("currentIndex");
-    if (lableListStr) {
-      lableList.value = JSON.parse(lableListStr);
-    }
-    if (currentIndexStr) {
-      currentIndex.value = JSON.parse(currentIndexStr);
-    }
-  }
-  function nextLabel() {
-    currentIndex.value = (currentIndex.value + 1) % lableList.value.length;
-    updateCurrentLabel();
-    return lableList.value[currentIndex.value];
-  }
-  function prevLabel() {
-    currentIndex.value =
-      (currentIndex.value - 1 + lableList.value.length) %
-      lableList.value.length;
-    updateCurrentLabel();
-    return lableList.value[currentIndex.value];
-  }
-  function currentLable() {
-    return lableList.value[currentIndex.value];
-  }
-  function getLabelById(id: number) {
-    return lableList.value.find((item) => item.id === id);
-  }
-  function getRadomColor() {
-    return "#" + Math.floor(Math.random() * 16777215).toString(16);
-  }
-  function addLabel(name: string, color = getRadomColor()) {
-    const id = lableList.value.length;
-    lableList.value.push({ id, name, color });
-    save();
-  }
-  function delLabel(id: number) {
-    const index = lableList.value.findIndex((item) => item.id === id);
-    if (index === -1) return;
-    lableList.value.splice(index, 1);
-    save();
-  }
-  function updateLabel(id: number, name: string, color: string) {
-    const index = lableList.value.findIndex((item) => item.id === id);
-    if (index === -1) return;
-    lableList.value[index].name = name;
-    lableList.value[index].color = color;
-    save();
-  }
-  function setLable(id: number) {
-    currentIndex.value = lableList.value.findIndex((item) => item.id === id);
-    updateCurrentLabel();
-  }
-  function getAllLables() {
-    return lableList.value;
-  }
-  read();
-  return {
-    lables: lableList,
-    lableIndex: currentIndex,
-    getAllLables,
-    nextLabel,
-    prevLabel,
-    setLable,
-    getLabelById,
-    currentLable,
-    getRadomColor,
-    addLabel,
-    delLabel,
-    updateLabel,
-  };
-}
-const {
-  lables, // 标签数据
-  setLable, // 设置当前标签
-  addLabel, // 添加标签
-  delLabel, // 删除标签
-  updateLabel, // 修改标签
-  getRadomColor, // 获取随机颜色
-  currentLable, // 获取当前标签
-  nextLabel, // 下一个标签
-  prevLabel, // 上一个标签
-  getLabelById, // 通过id获取标签
-  getAllLables, // 获取所有标签
-} = lableAction();
 
 /**
  * 重置canvas位置,保持居中
@@ -174,7 +75,7 @@ function resetCanvasPosition() {
   states.currentState.scale = scale;
 }
 /**
- * 解析图片，加载到canvas中
+ * 解析图片数据
  * @param imageData
  */
 function loadImage(imageData: ImageData) {
@@ -211,21 +112,8 @@ function loadImage(imageData: ImageData) {
  */
 async function saveLable() {
   if (!fileIo) throw new Error("fileIo is null");
-  if (lableList.length === 0) return;
-  let content = "";
-  const {
-    width: imgWidth,
-    height: imgHeight,
-    name: imgName,
-  } = states.currentImage;
-  lableList.forEach((lable) => {
-    let { x, y, width, height, cid } = lable;
-    const yolo = transfromYolo(x, y, width, height, imgWidth, imgHeight);
-    const str = `${cid} ${yolo.x} ${yolo.y} ${yolo.width} ${yolo.height}\n`;
-    content += str;
-  });
-  const name = imgName.split(".")[0] + ".txt";
-  await fileIo.saveFile(name, content);
+  const { width, height, name } = states.currentImage;
+  return fileIo.saveYoloFile(name, width, height, lableList);
 }
 /**
  * 根据yolo格式加载标签数据
@@ -233,37 +121,52 @@ async function saveLable() {
  */
 async function loadLable(imageName: string) {
   if (!fileIo) throw new Error("fileIo is null");
-  const name = imageName.split(".")[0] + ".txt";
-  const content = await fileIo.readFile(name);
-  if (!content) return;
-  const { width: imgWidth, height: imgHeight } = states.currentImage;
-  content.split("\n").forEach((item) => {
-    if (!item) return;
-    const [cid, x, y, width, height] = item.split(" ");
-    const lableData = transfromYoloReverse(
-      Number(x),
-      Number(y),
-      Number(width),
-      Number(height),
-      imgWidth,
-      imgHeight
-    );
+  const { width, height } = states.currentImage;
+  const labelDataList = await fileIo.loadYoloFile(
+    imageName,
+    width,
+    height,
+    (id) => {
+      if (!labelManage) throw new Error("LabelManage is null");
+      const _lable = labelManage.getLabelById(id);
+      if (!_lable) {
+        return labelManage.addLabel("未知标签", "#FF0000", id);
+      }
+      return _lable;
+    }
+  );
+  lableList.push(...labelDataList);
+  // const name = imageName.split(".")[0] + ".txt";
+  // const content = await fileIo.readFile(name);
+  // if (!content) return;
+  // const { width: imgWidth, height: imgHeight } = states.currentImage;
+  // content.split("\n").forEach((item) => {
+  //   if (!item) return;
+  //   const [cid, x, y, width, height] = item.split(" ");
+  //   const lableData = transfromYoloReverse(
+  //     Number(x),
+  //     Number(y),
+  //     Number(width),
+  //     Number(height),
+  //     imgWidth,
+  //     imgHeight
+  //   );
 
-    if (!lables) throw new Error("lables is null");
-    const _lable = getLabelById(Number(cid));
-    if (!_lable) throw new Error("lable is null");
-    const { name, color } = _lable;
-    lableList.push({
-      id: getRadomId(),
-      cid: Number(cid),
-      name,
-      color,
-      x: lableData.x,
-      y: lableData.y,
-      width: lableData.width,
-      height: lableData.height,
-    });
-  });
+  //   if (!lables) throw new Error("lables is null");
+  //   const _lable = getLabelById(Number(cid));
+  //   if (!_lable) throw new Error("lable is null");
+  //   const { name, color } = _lable;
+  //   lableList.push({
+  //     id: getRadomId(),
+  //     cid: Number(cid),
+  //     name,
+  //     color,
+  //     x: lableData.x,
+  //     y: lableData.y,
+  //     width: lableData.width,
+  //     height: lableData.height,
+  //   });
+  // });
 }
 /**
  * 加载图片具体操作
@@ -272,17 +175,18 @@ async function loadLable(imageName: string) {
 async function loadImageAction(isNext: boolean | ImageData = true) {
   if (!drawAction) throw new Error("drawAction is null");
   try {
-    const { refreshDraw } = drawAction;
-    await saveLable();
-    lableList.length = 0;
     if (!fileIo) return;
+    const { refreshDraw } = drawAction;
+    // 保存当前图片的标签数据
+    await saveLable();
+    // 清空当前标签数据
+    lableList.length = 0;
     const imageData =
       typeof isNext === "boolean"
         ? isNext
           ? fileIo.nextImage
           : fileIo.prevImage
         : isNext;
-    if (!imageData) return;
     if (typeof isNext !== "boolean")
       fileIo.index = fileIo.imagesData.findIndex(
         (item) => item.name === imageData.name
@@ -322,22 +226,16 @@ async function init() {
   }
   fileIo.setIndex(states.imageIndex);
   states.isShowChooseFolder = false;
-  // 矫正canvas大小
-  if (!canvasDom.value || !canvasDom.value.parentElement) return;
-  const ctx = canvasDom.value.getContext("2d");
-  if (!ctx) return;
-  canvasCtx = ctx;
-  const rect = canvasDom.value.getBoundingClientRect();
-  canvasDom.value.width = rect.width;
-  canvasDom.value.height = rect.height;
   // 加载图片
   const imageData = fileIo.currentImage;
   if (!imageData) return;
   await loadImage(imageData);
   await loadLable(imageData.name);
+  if (!canvasDom.value) throw new Error("canvasDom is null");
   drawAction = new DrawAction(canvasDom.value, lableList, states);
   drawAction.refreshDraw();
   Snackbar.clear();
+  loadEvents();
 }
 /**
  * 注册事件
@@ -350,14 +248,15 @@ function loadEvents() {
   // 监听键盘事件
   window.onkeydown = (e) => {
     if (timmer && Date.now() - timmer < 200) return;
+    if (!labelManage) throw new Error("labelManage is null");
     switch (e.code) {
       case "KeyE": // 下一个标签
-        const _lable = nextLabel();
+        const _lable = labelManage.nextLabel();
         Snackbar.info("切换到标签:" + _lable?.name);
         refreshDraw();
         break;
       case "KeyQ": // 上一个标签
-        const prev_lable = prevLabel();
+        const prev_lable = labelManage.prevLabel();
         Snackbar.info("切换到标签:" + prev_lable?.name);
         refreshDraw();
         break;
@@ -395,19 +294,19 @@ function loadEvents() {
   window.oncontextmenu = (e) => {
     e.preventDefault();
   };
-  window.onbeforeunload = async () => {
+  window.onbeforeunload = async (e) => {
+    e.preventDefault();
     Snackbar.loading("保存中...");
-    cacheLable(getAllLables());
+    labelManage.save();
     await saveLable();
     Snackbar.clear();
   };
-  if (!canvasDom.value) return;
+  if (!canvasDom.value) throw new Error("canvasDom is null");
   const canvas = canvasDom.value;
   // 监听鼠标滚轮
   canvas.parentElement?.addEventListener(
     "wheel",
     (e: any) => {
-      if (!canvasCtx) return;
       const scale = Number(canvas.style.getPropertyValue("--scale")) || 1;
       const scaleRate = scale * 0.1;
       const delta = e.deltaY > 0 ? -scaleRate : scaleRate;
@@ -429,7 +328,6 @@ onMounted(async () => {
     return;
   }
   await init();
-  loadEvents();
 });
 
 // 添加标签部分
@@ -442,12 +340,14 @@ const inputLabel = reactive({
  * 确认添加标签
  */
 function confirmAddLable() {
+  if (!labelManage) throw new Error("labelManage is null");
   const { id, name, color } = inputLabel;
-  if (id) {
-    updateLabel(id, name, color);
+  if (typeof id === "number") {
+    labelManage.updateLabel(id, { id, name, color });
     Snackbar.info("修改标签成功");
   } else {
-    addLabel(name, color);
+    labelManage.addLabel(name, color);
+    Snackbar.info("添加标签成功");
   }
   inputLabel.id = undefined;
   inputLabel.name = "";
@@ -469,6 +369,7 @@ const lableContextmenuState = reactive({
  */
 function lableContextmenu(e: MouseEvent, data: Label) {
   e.preventDefault();
+  if (data.id === states.currentLable.id) return;
   lableContextmenuState.x = e.clientX;
   lableContextmenuState.y = e.clientY;
   lableContextmenuState.data = data;
@@ -486,12 +387,12 @@ function lableContextmenu(e: MouseEvent, data: Label) {
  * @param isDelete 是否删除
  */
 function lableContextmenuAction(isDelete = false) {
-  if (!lableContextmenuState.data) return;
+  if (!lableContextmenuState.data || !labelManage) return;
   const { name, id, color } = lableContextmenuState.data;
   if (isDelete) {
     const res = window.confirm("是否删除标签：" + name);
     if (res && id) {
-      delLabel(id);
+      labelManage.deleteLabel(id);
       return;
     }
     Snackbar.info("取消删除");
@@ -501,6 +402,7 @@ function lableContextmenuAction(isDelete = false) {
   inputLabel.id = id;
   inputLabel.name = name;
   inputLabel.color = color;
+  console.log("编辑标签", lableContextmenuState.data);
 }
 </script>
 
@@ -532,14 +434,14 @@ function lableContextmenuAction(isDelete = false) {
         >
         <var-button
           type="primary"
-          @click="prevLabel()"
+          @click="labelManage.prevLabel()"
         >
           <Icon icon="solar:adhesive-plaster-2-broken" />
           上一个(Q)</var-button
         >
         <var-button
           type="primary"
-          @click="nextLabel()"
+          @click="labelManage.nextLabel()"
         >
           <Icon icon="solar:adhesive-plaster-2-broken" />
           下一个(E)</var-button
@@ -581,7 +483,7 @@ function lableContextmenuAction(isDelete = false) {
           {{ states.currentState.mouseX }}
           × {{ states.currentState.mouseY }}
         </div>
-        <div :title="`画布方法倍率:${states.currentState.scale}`">
+        <div :title="`画布缩放倍率:${states.currentState.scale.toFixed(4)}`">
           <Icon
             icon="solar:scale-linear"
             style="color: var(--color-primary)"
@@ -667,14 +569,14 @@ function lableContextmenuAction(isDelete = false) {
         </var-button>
         <ListVue
           style="height: 81vh"
-          :data="lables"
+          :data="labelManage?.labels ?? []"
         >
           <template #default="{ data, index }">
             <var-button
               :text="states.currentLable.id !== data.id"
               type="primary"
               size="small"
-              @click="setLable(data.id as number)"
+              @click="labelManage?.setLable(index)"
               @contextmenu="lableContextmenu($event, data as any)"
             >
               <div style="display: flex; width: 7em">
@@ -728,21 +630,19 @@ function lableContextmenuAction(isDelete = false) {
       v-model:show="states.isShowAddLable"
       @confirm="confirmAddLable()"
     >
+      {{ inputLabel }}
       <var-input
         v-model="inputLabel.name"
         placeholder="标签名"
         style="width: 100%"
         size="small"
       >
-        <template #append-icon>
-          <!-- @vue-ignore,这里需要输入color，但是这个ui组件没适配。不影响使用。。。 -->
-          <var-input
-            style="width: 2em"
-            v-model="inputLabel.color"
-            type="color"
-            size="small"
-          >
-          </var-input>
+        <template #prepend-icon>
+          <ColorPicker
+            shape="circle"
+            v-model:pureColor="inputLabel.color"
+            format="hex"
+          ></ColorPicker>
         </template>
       </var-input>
     </var-dialog>

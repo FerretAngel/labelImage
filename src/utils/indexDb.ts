@@ -1,5 +1,8 @@
+import { Snackbar } from "@varlet/ui";
 const INDEX_DB_NAME = "LABEL_IMAGE_INDEXDB";
 const OBJECT_STORE_NAME = "LABEL_IMAGE_OBJECT_STORE";
+const FOLDER_KEY = "lableImageFolder";
+const OUTPUT_KEY = "lableImageOutput";
 /**
  * 打开indexDB
  * @returns IDBDatabase
@@ -68,4 +71,41 @@ export async function setData(key: string, value: any) {
       resolve();
     };
   });
+}
+
+
+/**
+ * 选择图片文件夹，必须要使用用户触发的事件调用
+ */
+export async function selectImageFolder() {
+  try {
+    // @ts-ignore
+    const ImageDirHandle = (await showDirectoryPicker({
+      id: FOLDER_KEY,
+      mode: "read",
+      startIn: "pictures",
+    })) as FileSystemDirectoryHandle;
+    setData("ImageDirHandle", ImageDirHandle);
+  } catch (error) {
+    console.error(error);
+    // @ts-ignore
+    Snackbar.error("打开文件夹失败, 请检查是否拒绝了权限请求");
+  }
+}
+/**
+ * 选择输出文件夹，必须要使用用户触发的事件调用
+ */
+export async function selectOutputFolder() {
+  try {
+    // @ts-ignore
+    const OutputDirHandle = (await showDirectoryPicker({
+      id: OUTPUT_KEY,
+      mode: "readwrite",
+    })) as FileSystemDirectoryHandle;
+    setData("OutputDirHandle", OutputDirHandle);
+  } catch (error) {
+    console.error(error);
+    // @ts-ignore
+    Snackbar.error("打开文件夹失败, 请检查是否拒绝了权限请求");
+  }
 }
