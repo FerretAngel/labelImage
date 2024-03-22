@@ -354,6 +354,15 @@ function confirmAddLable() {
   inputLabel.color = getRadomColor();
   states.isShowAddLable = false;
 }
+/**
+ * 添加标签
+ */
+function addLable() {
+  inputLabel.id = undefined;
+  inputLabel.color = getRadomColor();
+  inputLabel.name = "";
+  states.isShowAddLable = true;
+}
 
 // 标签的右键菜单部分
 const lableContextmenuState = reactive({
@@ -559,7 +568,7 @@ function lableContextmenuAction(isDelete = false) {
           style="width: 100%"
           type="info"
           :icon-container="true"
-          @click="states.isShowAddLable = !states.isShowAddLable"
+          @click="addLable()"
         >
           <Icon
             style="font-size: 2em"
@@ -629,12 +638,13 @@ function lableContextmenuAction(isDelete = false) {
     <var-dialog
       v-model:show="states.isShowAddLable"
       @confirm="confirmAddLable()"
+      :title="inputLabel.id === undefined ? '添加标签' : '编辑标签'"
     >
-      {{ inputLabel }}
       <var-input
         v-model="inputLabel.name"
         placeholder="标签名"
         style="width: 100%"
+        variant="outlined"
         size="small"
       >
         <template #prepend-icon>
