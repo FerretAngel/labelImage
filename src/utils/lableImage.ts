@@ -844,8 +844,8 @@ export class LabelManage {
     const lableListStr = localStorage.getItem("lableList");
     const currentIndexStr = localStorage.getItem("currentIndex");
     return {
-      lableList: lableListStr ? JSON.parse(lableListStr) : [],
-      currentIndex: currentIndexStr ? Number(currentIndexStr) : 0,
+      lableList: lableListStr ? JSON.parse(lableListStr) : undefined,
+      currentIndex: currentIndexStr ? Number(currentIndexStr) : undefined,
     };
   }
   getRadomColor() {
