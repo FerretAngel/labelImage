@@ -39,11 +39,12 @@ export class FileIo {
     const { ImageDirHandle, imagesData } = this;
     //@ts-ignore
     for await (const [key, value] of ImageDirHandle.entries()) {
+      // 忽略非图片文件
+      if (!value.name.match(/\.(jpg|jpeg|png|gif)$/)) continue;
       const file = await value.getFile();
       const url = URL.createObjectURL(file);
       imagesData.push({ name: key, value, url });
     }
-    console.log("imagesData", imagesData);
   }
 
   setIndex(index: number) {

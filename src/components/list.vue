@@ -72,12 +72,17 @@ const list = computed(() => {
 <style lang="less" scoped>
 .ListBody {
   padding: 1em 0;
+  display: flex;
+  flex-direction: column;
   main {
+    flex: 1;
     margin-top: 0.5em;
-    display: flex;
-    flex-direction: column;
     gap: 5px;
-    overflow: scroll;
+    overflow-y: auto;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    border-radius: 0.5em;
+    padding: 0.5em;
+    overflow-x: hidden;
   }
 }
 </style>

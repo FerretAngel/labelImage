@@ -1,13 +1,17 @@
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, type Ref } from "vue";
 import { Snackbar } from "@varlet/ui";
 import { getData } from "@/utils/indexDb";
 import {
   selectImageFolder,
+  getLables,
+  cacheLable,
   selectOutputFolder,
   getRadomId,
   transfromYolo,
   transfromYoloReverse,
+  type StatesType,
+  DrawAction,
 } from "@/utils";
 import {
   FileIo,
@@ -17,12 +21,13 @@ import {
 } from "@/utils/lableImage";
 import ListVue from "@/components/list.vue";
 const canvasDom = ref<HTMLCanvasElement | null>(null);
-const states = reactive({
+const states = reactive<StatesType>({
   isShowChooseFolder: false,
-  lableIndex: 0,
-  imageIndex: 0,
   isShowLableName: true,
   isShowAddLable: false,
+  isEditLable: false,
+  lableIndex: 0,
+  imageIndex: 0,
   currentImage: {
     name: "",
     img: null as HTMLImageElement | null,
@@ -33,104 +38,31 @@ const states = reactive({
     dw: 0,
     dh: 0,
   },
+  currentLable: {
+    id: 0,
+    name: "person",
+    color: "#a3103f",
+  },
+  currentState: {
+    scale: 1,
+    mouseX: 0,
+    mouseY: 0,
+  },
 }); // 状态
-const lableList = ref(new Array<LabelData>()); // 当前图片的标签数据
+const lableList = reactive(new Array<LabelData>()); // 当前图片的标签数据
 const imageList = ref(new Array<ImageData>()); // 图片列表
 let fileIo: FileIo | null = null, // 文件操作实例
-  canvasCtx: CanvasRenderingContext2D | null = null; // 画布上下文
-/**
- * 默认标签
- */
-function getDefalutLables() {
-  return [
-    { id: 0, name: "person", color: "#a3103f" },
-    { id: 1, name: "bicycle", color: "#692079" },
-    { id: 2, name: "car", color: "#e7b81" },
-    { id: 3, name: "motorcycle", color: "#f89892" },
-    { id: 4, name: "airplane", color: "#15aa3f" },
-    { id: 5, name: "bus", color: "#a43389" },
-    { id: 6, name: "train", color: "#89ca75" },
-    { id: 7, name: "truck", color: "#4bce20" },
-    { id: 8, name: "boat", color: "#40d49" },
-    { id: 9, name: "traffic light", color: "#f47c7a" },
-    { id: 10, name: "fire hydrant", color: "#1979b1" },
-    { id: 11, name: "stop sign", color: "#a09f4b" },
-    { id: 12, name: "parking meter", color: "#381366" },
-    { id: 13, name: "bench", color: "#85c89" },
-    { id: 14, name: "bird", color: "#6530ce" },
-    { id: 15, name: "cat", color: "#bebff6" },
-    { id: 16, name: "dog", color: "#6faf2c" },
-    { id: 17, name: "horse", color: "#24557f" },
-    { id: 18, name: "sheep", color: "#cf70f0" },
-    { id: 19, name: "cow", color: "#e99d7d" },
-    { id: 20, name: "elephant", color: "#636c60" },
-    { id: 21, name: "bear", color: "#73c095" },
-    { id: 22, name: "zebra", color: "#c07210" },
-    { id: 23, name: "giraffe", color: "#6666d3" },
-    { id: 24, name: "backpack", color: "#69786f" },
-    { id: 25, name: "umbrella", color: "#6383ee" },
-    { id: 26, name: "handbag", color: "#51159a" },
-    { id: 27, name: "tie", color: "#c5a699" },
-    { id: 28, name: "suitcase", color: "#9984fb" },
-    { id: 29, name: "frisbee", color: "#ef1fa4" },
-    { id: 30, name: "skis", color: "#ae918f" },
-    { id: 31, name: "snowboard", color: "#71a4f5" },
-    { id: 32, name: "sports ball", color: "#b6514c" },
-    { id: 33, name: "kite", color: "#6be60e" },
-    { id: 34, name: "baseball bat", color: "#a126f2" },
-    { id: 35, name: "baseball glove", color: "#7659f5" },
-    { id: 36, name: "skateboard", color: "#c69da7" },
-    { id: 37, name: "surfboard", color: "#54e55b" },
-    { id: 38, name: "tennis racket", color: "#739f3b" },
-    { id: 39, name: "bottle", color: "#e405e0" },
-    { id: 40, name: "wine glass", color: "#e130ee" },
-    { id: 41, name: "cup", color: "#3c28b6" },
-    { id: 42, name: "fork", color: "#ebe953" },
-    { id: 43, name: "knife", color: "#23539" },
-    { id: 44, name: "spoon", color: "#6ef2e6" },
-    { id: 45, name: "bowl", color: "#5d5c4c" },
-    { id: 46, name: "banana", color: "#43bfca" },
-    { id: 47, name: "apple", color: "#7fef14" },
-    { id: 48, name: "sandwich", color: "#781102" },
-    { id: 49, name: "orange", color: "#56bb40" },
-    { id: 50, name: "broccoli", color: "#a73b0" },
-    { id: 51, name: "carrot", color: "#b2fffb" },
-    { id: 52, name: "hot dog", color: "#2e8316" },
-    { id: 53, name: "pizza", color: "#fd2993" },
-    { id: 54, name: "donut", color: "#668aaf" },
-    { id: 55, name: "cake", color: "#f7e147" },
-    { id: 56, name: "chair", color: "#37af33" },
-    { id: 57, name: "couch", color: "#b18370" },
-    { id: 58, name: "potted plant", color: "#d9cafb" },
-    { id: 59, name: "bed", color: "#e018e2" },
-    { id: 60, name: "dining table", color: "#c007a7" },
-    { id: 61, name: "toilet", color: "#4cf7a8" },
-    { id: 62, name: "tv", color: "#c9fbf3" },
-    { id: 63, name: "laptop", color: "#af94d7" },
-    { id: 64, name: "mouse", color: "#d7e70e" },
-    { id: 65, name: "remote", color: "#5f8711" },
-    { id: 66, name: "keyboard", color: "#a55acf" },
-    { id: 67, name: "cell phone", color: "#68d41" },
-    { id: 68, name: "microwave", color: "#771f8d" },
-    { id: 69, name: "oven", color: "#fd8cd6" },
-    { id: 70, name: "toaster", color: "#ceea59" },
-    { id: 71, name: "sink", color: "#fd3dfc" },
-    { id: 72, name: "refrigerator", color: "#f1631c" },
-    { id: 73, name: "book", color: "#eb624c" },
-    { id: 74, name: "clock", color: "#120a7f" },
-    { id: 75, name: "vase", color: "#cb528b" },
-    { id: 76, name: "scissors", color: "#f66eb" },
-    { id: 77, name: "teddy bear", color: "#8a405a" },
-    { id: 78, name: "hair drier", color: "#c639cb" },
-    { id: 79, name: "toothbrush", color: "#5af16b" },
-  ];
-}
+  canvasCtx: CanvasRenderingContext2D | null = null,
+  drawAction: DrawAction | null; // 画布上下文
 /**
  * 标签操作相关，初始化，增删改查
  */
-function lableAction(labels = getDefalutLables(), index = 0) {
+function lableAction(labels = getLables(), index = 0) {
   const lableList = ref(labels);
   const currentIndex = ref(index);
+  function updateCurrentLabel() {
+    states.currentLable = lableList.value[currentIndex.value];
+  }
   function save() {
     localStorage.setItem("lableList", JSON.stringify(lableList.value));
     localStorage.setItem("currentIndex", JSON.stringify(currentIndex.value));
@@ -147,12 +79,14 @@ function lableAction(labels = getDefalutLables(), index = 0) {
   }
   function nextLabel() {
     currentIndex.value = (currentIndex.value + 1) % lableList.value.length;
+    updateCurrentLabel();
     return lableList.value[currentIndex.value];
   }
   function prevLabel() {
     currentIndex.value =
       (currentIndex.value - 1 + lableList.value.length) %
       lableList.value.length;
+    updateCurrentLabel();
     return lableList.value[currentIndex.value];
   }
   function currentLable() {
@@ -184,11 +118,16 @@ function lableAction(labels = getDefalutLables(), index = 0) {
   }
   function setLable(id: number) {
     currentIndex.value = lableList.value.findIndex((item) => item.id === id);
+    updateCurrentLabel();
+  }
+  function getAllLables() {
+    return lableList.value;
   }
   read();
   return {
     lables: lableList,
     lableIndex: currentIndex,
+    getAllLables,
     nextLabel,
     prevLabel,
     setLable,
@@ -211,6 +150,7 @@ const {
   nextLabel, // 下一个标签
   prevLabel, // 上一个标签
   getLabelById, // 通过id获取标签
+  getAllLables, // 获取所有标签
 } = lableAction();
 
 /**
@@ -227,7 +167,11 @@ function resetCanvasPosition() {
   const c_height = canvas.height;
   const scale = Math.min(width / c_width, height / c_height);
   // 考虑transformOrigin为居中
+  canvas.style.transformOrigin = "center center";
   canvas.style.setProperty("--scale", `${scale}`);
+  canvas.style.setProperty("--x", `${(width - c_width) / 2}px`);
+  canvas.style.setProperty("--y", `${(height - c_height) / 2}px`);
+  states.currentState.scale = scale;
 }
 /**
  * 解析图片，加载到canvas中
@@ -252,8 +196,8 @@ function loadImage(imageData: ImageData) {
       cavans.style.width = img.width + "px";
       cavans.style.height = img.height + "px";
       // 设置标题
-      document.title = imageData.name;
-      resetCanvasPosition();// 重置canvas位置，保持居中
+      document.title = `标注图片-${imageData.name}`;
+      resetCanvasPosition(); // 重置canvas位置，保持居中
       resolve(img);
     };
     img.onerror = (e) => {
@@ -267,14 +211,14 @@ function loadImage(imageData: ImageData) {
  */
 async function saveLable() {
   if (!fileIo) throw new Error("fileIo is null");
-  if (lableList.value.length === 0) return;
+  if (lableList.length === 0) return;
   let content = "";
   const {
     width: imgWidth,
     height: imgHeight,
     name: imgName,
   } = states.currentImage;
-  lableList.value.forEach((lable) => {
+  lableList.forEach((lable) => {
     let { x, y, width, height, cid } = lable;
     const yolo = transfromYolo(x, y, width, height, imgWidth, imgHeight);
     const str = `${cid} ${yolo.x} ${yolo.y} ${yolo.width} ${yolo.height}\n`;
@@ -309,7 +253,7 @@ async function loadLable(imageName: string) {
     const _lable = getLabelById(Number(cid));
     if (!_lable) throw new Error("lable is null");
     const { name, color } = _lable;
-    lableList.value.push({
+    lableList.push({
       id: getRadomId(),
       cid: Number(cid),
       name,
@@ -326,9 +270,11 @@ async function loadLable(imageName: string) {
  * @param isNext 是否加载下一张
  */
 async function loadImageAction(isNext: boolean | ImageData = true) {
+  if (!drawAction) throw new Error("drawAction is null");
   try {
+    const { refreshDraw } = drawAction;
     await saveLable();
-    lableList.value = [];
+    lableList.length = 0;
     if (!fileIo) return;
     const imageData =
       typeof isNext === "boolean"
@@ -350,161 +296,7 @@ async function loadImageAction(isNext: boolean | ImageData = true) {
     Snackbar.error("加载图片失败:" + e.message);
   }
 }
-/**
- * canvas操作部分
- */
-function drawAction() {
-  let isDraw = false;
-  let isDrag = false;
-  let startPoint = { x: 0, y: 0 };
-  let drawRect = {
-    x: 0,
-    y: 0,
-    w: 0,
-    h: 0,
-  };
-  function start(e: MouseEvent) {
-    if (!canvasDom.value) return;
 
-    // 复位
-    if (e.button === 1) {
-      canvasDom.value.style.setProperty("--x", "0px");
-      canvasDom.value.style.setProperty("--y", "0px");
-      canvasDom.value.style.setProperty("--scale", "1");
-      return;
-    }
-    // 右键开始拖拽
-    if (e.button === 2) {
-      isDrag = true;
-      canvasDom.value.style.cursor = "move";
-      canvasDom.value.style.transition = "none";
-      return;
-    }
-    // 左键开始画框
-    if (e.button !== 0) return;
-    isDraw = true;
-    startPoint = { x: e.offsetX, y: e.offsetY };
-  }
-  function move(e: MouseEvent) {
-    if (isDrag && canvasDom.value) {
-      const canvas = canvasDom.value;
-      const { movementX, movementY } = e;
-      const originX = Number(
-        canvas.style.getPropertyValue("--x").replace("px", "")
-      );
-      const originY = Number(
-        canvas.style.getPropertyValue("--y").replace("px", "")
-      );
-      const scale = Number(canvas.style.getPropertyValue("--scale"));
-      const x = originX + movementX / scale;
-      const y = originY + movementY / scale;
-      canvas.style.setProperty("--x", `${x}px`);
-      canvas.style.setProperty("--y", `${y}px`);
-      return;
-    }
-    if (!isDraw || !canvasCtx || !canvasDom.value) return;
-    refreshDraw();
-    const { color } = currentLable();
-    canvasCtx.strokeStyle = color;
-    canvasCtx.beginPath();
-    let { x, y } = startPoint;
-    let { x1, y1 } = {
-      x1: e.offsetX,
-      y1: e.offsetY,
-    };
-    // 修正坐标,保证x1,y1大于x,y
-    if (x1 < x) [x, x1] = [x1, x];
-    if (y1 < y) [y, y1] = [y1, y];
-    // 相对于画布的坐标
-    let _x = x;
-    let _y = y;
-    let _w = x1 - x;
-    let _h = y1 - y;
-    // 修正,保证不超出画布
-    // 画框
-    canvasCtx.strokeRect(_x, _y, _w, _h);
-    canvasCtx.stroke();
-    // 缓存框的位置
-    drawRect.x = _x;
-    drawRect.y = _y;
-    drawRect.w = _w;
-    drawRect.h = _h;
-  }
-  function end(e: MouseEvent) {
-    if (isDrag && canvasDom.value) {
-      isDrag = false;
-      canvasDom.value.style.cursor = "default";
-      canvasDom.value.style.transition = "transform 0.2s";
-      return;
-    }
-    if (!canvasCtx) return;
-    isDraw = false;
-    const id = getRadomId();
-    const { id: cid, name, color } = currentLable();
-    const { x, y, w, h } = drawRect;
-    // 小于5px不保存
-    if (w < 5 || h < 5) {
-      refreshDraw();
-      return;
-    }
-    lableList.value.push({
-      id,
-      cid,
-      name,
-      color,
-      x: x,
-      y: y,
-      width: w,
-      height: h,
-    });
-    refreshDraw();
-  }
-  function drawImage() {
-    const cavans = canvasDom.value;
-    const ctx = canvasCtx;
-    const img = states.currentImage.img;
-    if (!ctx || !img || !cavans) return;
-    // 获取画布大小
-    const ctxw = Number(cavans.getAttribute("width")) || 0;
-    const ctxh = Number(cavans.getAttribute("height")) || 0;
-    // 等比例缩放到画布大小，并居中显示
-    const dw = img.width;
-    const dh = img.height;
-    const dx = (ctxw - dw) / 2;
-    const dy = (ctxh - dh) / 2;
-    states.currentImage.dx = dx;
-    states.currentImage.dy = dy;
-    states.currentImage.dw = dw;
-    states.currentImage.dh = dh;
-    ctx.drawImage(img, dx, dy, dw, dh);
-  }
-  function drawLable() {
-    lableList.value.forEach((lable) => {
-      if (!canvasCtx || !lable) return;
-      const { x, y, width, height, color } = lable;
-      canvasCtx.strokeStyle = color;
-      canvasCtx.fillStyle = color;
-      // 把id画在左上角
-      canvasCtx.lineWidth = 0.5;
-      if (states.isShowLableName) {
-        if (y - 2 > 10) canvasCtx.strokeText(lable.name, x, y - 2);
-        else canvasCtx.strokeText(lable.name, x, y + height + 8);
-      }
-      canvasCtx.lineWidth = 1;
-      canvasCtx.strokeRect(x, y, width, height);
-    });
-  }
-  function refreshDraw() {
-    // 清空画布
-    if (!canvasCtx) return;
-    canvasCtx.clearRect(0, 0, canvasCtx.canvas.width, canvasCtx.canvas.height);
-    drawImage();
-    drawLable();
-  }
-  window.onmouseup = end;
-  return { start, move, end, refreshDraw };
-}
-const { start, move, refreshDraw } = drawAction();
 // 初始化部分
 async function init() {
   const ImageDirHandle = await getData<FileSystemDirectoryHandle>(
@@ -538,62 +330,97 @@ async function init() {
   const rect = canvasDom.value.getBoundingClientRect();
   canvasDom.value.width = rect.width;
   canvasDom.value.height = rect.height;
-
   // 加载图片
   const imageData = fileIo.currentImage;
   if (!imageData) return;
   await loadImage(imageData);
   await loadLable(imageData.name);
-  refreshDraw();
+  drawAction = new DrawAction(canvasDom.value, lableList, states);
+  drawAction.refreshDraw();
   Snackbar.clear();
 }
 /**
  * 注册事件
  */
 function loadEvents() {
+  if (!drawAction) throw new Error("drawAction is null");
+  const { refreshDraw } = drawAction;
   // 监听ctrl+z
   let timmer: number | undefined;
-  window.addEventListener("keydown", (e) => {
+  // 监听键盘事件
+  window.onkeydown = (e) => {
     if (timmer && Date.now() - timmer < 200) return;
-    if (e.key === "d" || e.key === "D") {
-      loadImageAction();
-    } else if (e.key === "a" || e.key === "A") {
-      loadImageAction(false);
-    } else if (e.key === "q" || e.key === "Q") {
-      const _lable = prevLabel();
-      Snackbar.info("切换到标签:" + _lable?.name);
-      refreshDraw();
-    } else if (e.key === "e" || e.key === "E") {
-      const _lable = nextLabel();
-      Snackbar.info("切换到标签:" + _lable?.name);
-      refreshDraw();
-    } else if ((e.key === "z" || e.key === "Z") && e.ctrlKey) {
-      lableList.value.pop();
-      refreshDraw();
+    switch (e.code) {
+      case "KeyE": // 下一个标签
+        const _lable = nextLabel();
+        Snackbar.info("切换到标签:" + _lable?.name);
+        refreshDraw();
+        break;
+      case "KeyQ": // 上一个标签
+        const prev_lable = prevLabel();
+        Snackbar.info("切换到标签:" + prev_lable?.name);
+        refreshDraw();
+        break;
+      case "KeyA": // 上一张图片
+        loadImageAction(false);
+        break;
+      case "KeyD": // 下一张图片
+        loadImageAction();
+        break;
+      case "KeyW": // 切换到编辑模式
+        states.isEditLable = !states.isEditLable;
+        Snackbar.info(
+          "切换到" + (states.isEditLable ? "编辑" : "绘制") + "模式"
+        );
+        break;
+      case "KeyZ": // 撤销
+        if (e.ctrlKey) {
+          lableList.pop();
+          refreshDraw();
+        }
+        break;
     }
     timmer = Date.now();
-  });
+  };
+  // 监听鼠标中键复位
+  window.onmousedown = (e) => {
+    if (e.button === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+      resetCanvasPosition();
+      return;
+    }
+  };
+  // 阻止右键菜单
+  window.oncontextmenu = (e) => {
+    e.preventDefault();
+  };
+  window.onbeforeunload = async () => {
+    Snackbar.loading("保存中...");
+    cacheLable(getAllLables());
+    await saveLable();
+    Snackbar.clear();
+  };
   if (!canvasDom.value) return;
   const canvas = canvasDom.value;
   // 监听鼠标滚轮
-  canvas.parentNode?.addEventListener(
+  canvas.parentElement?.addEventListener(
     "wheel",
     (e: any) => {
       if (!canvasCtx) return;
       const scale = Number(canvas.style.getPropertyValue("--scale")) || 1;
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      if (scale + delta < 0.3) return;
+      const scaleRate = scale * 0.1;
+      const delta = e.deltaY > 0 ? -scaleRate : scaleRate;
+      if (scale + delta < 0) return;
       // 修改css变量
       canvas.style.setProperty("--scale", `${scale + delta}`);
       refreshDraw();
+      states.currentState.scale = scale + delta;
     },
     {
       passive: false,
     }
   );
-  canvas.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-  });
 }
 onMounted(async () => {
   // @ts-ignore  ts没有showDirectoryPicker，所以忽略
@@ -681,31 +508,91 @@ function lableContextmenuAction(isDelete = false) {
   <div class="lableImageBody">
     <!-- 头部操作栏 -->
     <header>
-      <var-button
-        type="primary"
-        @click="states.isShowChooseFolder = true"
-        >选择文件夹</var-button
-      >
-      <var-button
-        type="primary"
-        @click="loadImageAction()"
-        >下一张(D)</var-button
-      >
-      <var-button
-        type="primary"
-        @click="loadImageAction(false)"
-        >上一张(A)</var-button
-      >
-      <var-button
-        type="primary"
-        @click="prevLabel()"
-        >上一个标签(Q)</var-button
-      >
-      <var-button
-        type="primary"
-        @click="nextLabel()"
-        >下一个标签(E)</var-button
-      >
+      <div>
+        <var-button
+          type="primary"
+          @click="states.isShowChooseFolder = true"
+        >
+          <Icon icon="solar:folder-bold-duotone" />
+          选择文件夹</var-button
+        >
+        <var-button
+          type="primary"
+          @click="loadImageAction()"
+        >
+          <Icon icon="solar:gallery-minimalistic-outline" />
+          下一张(D)</var-button
+        >
+        <var-button
+          type="primary"
+          @click="loadImageAction(false)"
+        >
+          <Icon icon="solar:gallery-minimalistic-outline" />
+          上一张(A)</var-button
+        >
+        <var-button
+          type="primary"
+          @click="prevLabel()"
+        >
+          <Icon icon="solar:adhesive-plaster-2-broken" />
+          上一个(Q)</var-button
+        >
+        <var-button
+          type="primary"
+          @click="nextLabel()"
+        >
+          <Icon icon="solar:adhesive-plaster-2-broken" />
+          下一个(E)</var-button
+        >
+        <var-button
+          type="primary"
+          @click="states.isEditLable = !states.isEditLable"
+          :title="
+            states.isEditLable
+              ? `当前可以对框进行调整位置、改变大小、右键删除操作`
+              : `当前可以绘制框、移动画布、缩放画布`
+          "
+        >
+          <Icon
+            v-if="!states.isEditLable"
+            icon="solar:gallery-edit-linear"
+          />
+          <Icon
+            v-else
+            icon="solar:clapperboard-edit-linear"
+          />
+          切换到{{ states.isEditLable ? "绘制" : "编辑" }}模式(W)</var-button
+        >
+      </div>
+      <div>
+        <div title="图片大小">
+          <Icon
+            icon="solar:gallery-minimalistic-outline"
+            style="color: var(--color-primary)"
+          />
+          {{ states.currentImage.width }}
+          × {{ states.currentImage.height }}
+        </div>
+        <div title="鼠标相对于画布的位置">
+          <Icon
+            icon="solar:mouse-minimalistic-line-duotone"
+            style="color: var(--color-primary)"
+          />
+          {{ states.currentState.mouseX }}
+          × {{ states.currentState.mouseY }}
+        </div>
+        <div :title="`画布方法倍率:${states.currentState.scale}`">
+          <Icon
+            icon="solar:scale-linear"
+            style="color: var(--color-primary)"
+          />
+          {{
+            Math.floor(states.currentState.scale * 100)
+              .toString()
+              .padStart(2, "0")
+          }}%
+        </div>
+      </div>
     </header>
     <!-- 内容主体 -->
     <main>
@@ -719,7 +606,13 @@ function lableContextmenuAction(isDelete = false) {
           <var-button
             :text="states.imageIndex !== index"
             type="primary"
-            style="width: 100%"
+            style="
+              width: 100%;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
+            :title="item.name"
             @click="loadImageAction(item)"
           >
             <img
@@ -729,10 +622,19 @@ function lableContextmenuAction(isDelete = false) {
                 height: 2em;
                 object-fit: cover;
                 margin-right: 0.5em;
+                border-radius: 0.1em;
               "
               lazy="true"
             />
-            {{ item.name }}
+            <span
+              style="
+                max-width: 5em;
+                flex: 1;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              "
+              >{{ item.name }}</span
+            >
           </var-button>
         </template>
       </div>
@@ -742,8 +644,9 @@ function lableContextmenuAction(isDelete = false) {
           ref="canvasDom"
           class="main"
           id="labelImageCanvas"
-          @mousedown="start"
-          @mousemove="move"
+          @mousedown="drawAction?.start($event)"
+          @mousemove="drawAction?.move($event)"
+          @contextmenu="drawAction?.contextmenu($event)"
         >
         </canvas>
       </div>
@@ -760,27 +663,42 @@ function lableContextmenuAction(isDelete = false) {
             style="font-size: 2em"
             icon="ic:round-add"
           />
+          添加标签
         </var-button>
-        <ListVue :data="lables">
+        <ListVue
+          style="height: 81vh"
+          :data="lables"
+        >
           <template #default="{ data, index }">
             <var-button
-              :text="currentLable().id !== data.id"
+              :text="states.currentLable.id !== data.id"
               type="primary"
               size="small"
               @click="setLable(data.id as number)"
               @contextmenu="lableContextmenu($event, data as any)"
             >
-              {{ data.name }}
-              <div
-                :style="{
-                  marginLeft: '0.5em',
-                  transform: 'translateY(0.1em)',
-                  width: '1em',
-                  height: '1em',
-                  borderRadius: '50%',
-                  backgroundColor: data.color,
-                }"
-              ></div>
+              <div style="display: flex; width: 7em">
+                <div
+                  :style="{
+                    marginRight: '0.5em',
+                    transform: 'translateY(0.1em)',
+                    width: '1em',
+                    height: '1em',
+                    borderRadius: '50%',
+                    backgroundColor: data.color,
+                  }"
+                ></div>
+                <div
+                  style="
+                    flex: 1;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    text-align: left;
+                  "
+                >
+                  {{ data.name }}
+                </div>
+              </div>
             </var-button>
           </template>
         </ListVue>
@@ -866,11 +784,19 @@ function lableContextmenuAction(isDelete = false) {
   display: flex;
   flex-direction: column;
   header {
-    height: 4em;
+    padding: 0.5em;
     display: flex;
     align-items: center;
-    justify-content: start;
-    gap: 5px;
+    justify-content: space-between;
+    & > div {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      & > * {
+        display: flex;
+        align-items: center;
+      }
+    }
   }
   main {
     width: 100%;
@@ -882,10 +808,10 @@ function lableContextmenuAction(isDelete = false) {
     .right {
       width: 10em;
       height: 100%;
-      overflow-y: scroll;
     }
     .main {
       flex: 1;
+      position: relative;
       overflow: hidden;
       background-image: conic-gradient(
         rgba(0, 0, 0, 0.06) 0 25%,
@@ -894,9 +820,14 @@ function lableContextmenuAction(isDelete = false) {
         transparent 0
       );
       background-size: 15px 15px;
-      display: grid;
-      place-items: center;
+      box-shadow: inset 0 0 10px 0 rgba(0, 0, 0, 0.3);
+      border-radius: 0.5em 0.5em 0 0;
+      z-index: 1;
       canvas {
+        position: relative;
+        box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.3);
+        border-radius: 0.1em;
+        z-index: 0;
         width: 100%;
         height: 100%;
         --scale: 1;
@@ -904,8 +835,7 @@ function lableContextmenuAction(isDelete = false) {
         --y: 0;
         transition: transform 0.2s;
         transform-origin: center center;
-        // transform-origin: var(--origin-x) var(--origin-y);
-        transform: scale(var(--scale)) translate(var(--x), var(--y));
+        transform: translate(var(--x), var(--y)) scale(var(--scale));
       }
     }
   }
