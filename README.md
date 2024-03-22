@@ -25,7 +25,7 @@ ps 保存是在你切换图片的时候自动保存到你选择的输出目录�
  由于使用了 showDirectoryPicker 的 Api，兼容性比较差  
 [浏览器兼容性详情](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/showDirectoryPicker#%E6%B5%8F%E8%A7%88%E5%99%A8%E5%85%BC%E5%AE%B9%E6%80%A7)
 # 在线体验地址
-[在线体验](https://ferretangel.github.io/labelImageWeb/)
+[在线体验](https://ferretangel.github.io/labelImage/)
 # 后续计划
 1.优化ui设计  
 2.处理其他浏览器兼容性  
