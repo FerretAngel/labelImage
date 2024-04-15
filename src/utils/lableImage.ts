@@ -830,7 +830,6 @@ export class LabelManage {
     const index = this.labels.findIndex((item) => item.id === id);
     if (index === -1) return;
     this.labels.splice(index, 1, label);
-    console.log(this.labels[index]);
   }
   getLabelById(id: number) {
     return this.labels.find((item) => item.id === id);

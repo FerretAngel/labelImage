@@ -55,7 +55,7 @@ let fileIo: FileIo | null = null, // 文件操作实例
   drawAction: DrawAction | null; // 画布上下文
 
 /**
- * 重置canvas位置,保持居中
+ * 重置canvas位置,使画布居中
  */
 function resetCanvasPosition() {
   if (!canvasDom.value) return;
@@ -191,6 +191,10 @@ async function loadImageAction(isNext: boolean | ImageData = true) {
       fileIo.index = fileIo.imagesData.findIndex(
         (item) => item.name === imageData.name
       );
+    // 如果是最后一张图片，弹出提示
+    if (fileIo.index === imageList.value.length - 1) {
+      Snackbar.info("已经是最后一张图片了");
+    }
     states.imageIndex = fileIo.index;
     await loadImage(imageData);
     await loadLable(imageData.name);
@@ -430,6 +434,7 @@ function lableContextmenuAction(isDelete = false) {
         <var-button
           type="primary"
           @click="loadImageAction()"
+          title="切换下一张图片，快捷键D"
         >
           <Icon icon="solar:gallery-minimalistic-outline" />
           下一张(D)</var-button
@@ -437,6 +442,7 @@ function lableContextmenuAction(isDelete = false) {
         <var-button
           type="primary"
           @click="loadImageAction(false)"
+          title="切换上一张图片，快捷键A"
         >
           <Icon icon="solar:gallery-minimalistic-outline" />
           上一张(A)</var-button
@@ -444,6 +450,7 @@ function lableContextmenuAction(isDelete = false) {
         <var-button
           type="primary"
           @click="labelManage.prevLabel()"
+          title="切换上一个标签，快捷键Q"
         >
           <Icon icon="solar:adhesive-plaster-2-broken" />
           上一个(Q)</var-button
@@ -451,6 +458,7 @@ function lableContextmenuAction(isDelete = false) {
         <var-button
           type="primary"
           @click="labelManage.nextLabel()"
+          title="切换下一个标签，快捷键E"
         >
           <Icon icon="solar:adhesive-plaster-2-broken" />
           下一个(E)</var-button
