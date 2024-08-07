@@ -403,7 +403,9 @@ export class DrawAction {
     if (states.lineWidth) return states.lineWidth;
     // 根据图片大小自动计算线宽
     const { width, height } = currentImage;
-    const min_w = Math.min(width, height);
+    const min_w = Math.max(width, height);
+    if(min_w<500) return Math.max(1, Math.floor(min_w / 80));
+    if(min_w<100) return 1;
     return Math.max(1, Math.floor(min_w / 200));
   }
   findLable(offsetX: number, offsetY: number): LabelData | undefined {
