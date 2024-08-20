@@ -17,6 +17,7 @@ import {
   FileIo,
   LabelManage,
   DrawAction,
+  copyToClipboard,
 } from "@/utils/lableImage";
 import ListVue from "@/components/list.vue";
 const canvasDom = ref<HTMLCanvasElement | null>(null);
@@ -54,6 +55,11 @@ const labelManage = new LabelManage(states); // 标签管理
 let fileIo: FileIo | null = null, // 文件操作实例
   drawAction: DrawAction | null; // 画布上下文
 
+function exportLable() {
+  const str = labelManage.labels.map((item) => `  - ${item.name}`).join("\n");
+  copyToClipboard(str);
+  Snackbar.info("标签数据已复制到剪贴板");
+}
 /**
  * 重置canvas位置,使画布居中
  */
@@ -572,18 +578,37 @@ function lableContextmenuAction(isDelete = false) {
       <!-- 标签列表 -->
       <div class="right">
         <var-divider description="标签" />
-        <var-button
-          style="width: 100%"
-          type="info"
-          :icon-container="true"
-          @click="addLable()"
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5em;
+          "
         >
-          <Icon
-            style="font-size: 2em"
-            icon="ic:round-add"
-          />
-          添加标签
-        </var-button>
+          <var-button
+            type="info"
+            :icon-container="true"
+            @click="addLable()"
+            title="添加标签"
+          >
+            <Icon
+              style="font-size: 2em"
+              icon="ic:round-add"
+            />
+          </var-button>
+          <var-button
+            type="info"
+            :icon-container="true"
+            @click="exportLable()"
+            title="导出标签数据（用于快速修改data.yaml里面的分类数据）"
+          >
+            <Icon
+              style="font-size: 2em"
+              icon="ph:export"
+            />
+          </var-button>
+        </div>
         <ListVue
           style="height: 81vh"
           :data="labelManage?.labels ?? []"

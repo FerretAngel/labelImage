@@ -853,3 +853,17 @@ export class LabelManage {
     return "#" + Math.floor(Math.random() * 16777215).toString(16);
   }
 }
+
+
+export function copyToClipboard(text: string) {
+  try {
+    navigator.clipboard.writeText(text);
+  } catch (error) {
+    const input = document.createElement("input");
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    document.body.removeChild(input);
+  }
+}
