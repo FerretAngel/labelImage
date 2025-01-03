@@ -1,3 +1,5 @@
+# 推荐使用labelStudio进行更专业的数据标注
+[labelStudio(github)](https://github.com/HumanSignal/label-studio)
 # 简介
 一个适用于 yolov8（只使用过v8，其他不了解） 数据集的**网页**端标注工具。  
 打开即用、无需上传图片就是它的优点！  
